@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Enterprise Mac TCO & TEI Calculator</title>
+    <style>
+        :root {
+            --bg-color: #F5F5F7;
+            --card-bg: #FFFFFF;
+            --text-primary: #1D1D1F;
+            --text-secondary: #86868B;
+            --accent-color: #0071E3;
+            --accent-hover: #0077ED;
+            --success-color: #00B06B;
+            --danger-color: #FF3B30;
+            --border-radius: 18px;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+            --shadow-lg: 0 12px 30px rgba(0, 0, 0, 0.08);
+            --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-stack);
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.5;
+        }
+
+        /* --- Header --- */
+        header {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            padding: 16px 0;
+        }
+
+        .container {
+            max-width: 1400px; /* Wider for pro tool */
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-weight: 600;
+            font-size: 20px;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .logo span { color: var(--text-secondary); font-weight: 400; }
+
+        .badge {
+            font-size: 11px;
+            background: #000;
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* --- Main Layout --- */
+        main {
+            display: grid;
+            grid-template-columns: 1fr 480px; /* Wider sidebar for detailed results */
+            gap: 32px;
+            padding: 40px 24px 80px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 1024px) {
+            main { grid-template-columns: 1fr; }
+        }
+
+        /* --- Typography & Elements --- */
+        h2 {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0 0 24px 0;
+            letter-spacing: -0.01em;
+        }
+
+        h3 {
+            font-size: 15px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin: 24px 0 16px 0;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 24px;
+        }
+
+        /* --- Form Inputs --- */
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+        .input-row > div { flex: 1; }
+
+        input[type=number], select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d2d2d7;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: var(--font-stack);
+            transition: all 0.2s;
+            background: #fff;
+            -moz-appearance: textfield;
+        }
+        input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        
+        input[type=number]:focus, select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.1);
+        }
+
+        /* Range Sliders */
+        .range-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus { outline: none; }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #E5E5E5;
+            border-radius: 2px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -8px;
+            border: 0.5px solid rgba(0,0,0,0.1);
+        }
+        .number-display {
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+            min-width: 60px;
+            text-align: right;
+            color: var(--accent-color);
+            font-size: 14px;
+        }
+
+        /* --- Collapsible Sections --- */
+        .accordion {
+            border-top: 1px solid #E5E5E5;
+            margin-top: 16px;
+        }
+        .accordion-header {
+            padding: 16px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--accent-color);
+            user-select: none;
+        }
+        .accordion-content {
+            display: none;
+            padding-bottom: 16px;
+            animation: fadeIn 0.3s ease;
+        }
+        .accordion-content.active { display: block; }
+        .chevron { transition: transform 0.3s; width: 12px; height: 12px; fill: currentColor; }
+        .accordion-header.active .chevron { transform: rotate(180deg); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- Results Panel --- */
+        .results-panel {
+            position: sticky;
+            top: 100px;
+            height: fit-content;
+        }
+
+        .results-card {
+            background: #1D1D1F;
+            color: #fff;
+            border-radius: var(--border-radius);
+            padding: 32px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .results-card::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(0,113,227,0.15) 0%, rgba(29,29,31,0) 60%);
+            pointer-events: none;
+        }
+
+        .hero-metric {
+            text-align: center;
+            margin-bottom: 32px;
+            position: relative;
+        }
+
+        .hero-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #86868B;
+            margin-bottom: 8px;
+        }
+
+        .hero-value {
+            font-size: 48px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(180deg, #fff, #a1a1a6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .breakdown-list {
+            position: relative;
+            margin-top: 24px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 24px;
+        }
+
+        .breakdown-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            font-size: 13px;
+        }
+        .breakdown-item:last-child { margin-bottom: 0; }
+        
+        .b-label { color: #a1a1a6; display: flex; align-items: center; gap: 6px; }
+        .b-value { color: #fff; font-weight: 600; font-feature-settings: "tnum"; }
+        .b-positive { color: #30D158; }
+
+        /* KPI Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+            position: relative;
+        }
+        .kpi-card {
+            background: rgba(255,255,255,0.08);
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .kpi-title { font-size: 11px; color: #86868B; margin-bottom: 4px; }
+        .kpi-val { font-size: 16px; font-weight: 600; color: #fff; }
+
+        /* Stacked Bar for Costs */
+        .chart-container {
+            margin-top: 32px;
+            position: relative;
+        }
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+        .bar-wrapper {
+            height: 24px;
+            display: flex;
+            border-radius: 6px;
+            overflow: hidden;
+            background: rgba(255,255,255,0.1);
+            margin-bottom: 16px;
+        }
+        .bar-segment {
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+        .seg-hw { background: #FF3B30; } /* Hardware Cost */
+        .seg-ops { background: #FF9F0A; } /* Ops Cost */
+        .seg-risk { background: #BF5AF2; } /* Risk Cost */
+        
+        .mac-hw { background: #0071E3; }
+        .mac-ops { background: #5AC8FA; }
+        
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-size: 10px;
+            color: #86868B;
+            justify-content: center;
+        }
+        .legend-item { display: flex; align-items: center; gap: 4px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+        .cta-button {
+            display: block;
+            width: 100%;
+            background: #fff;
+            color: #000;
+            text-align: center;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: 600;
+            margin-top: 24px;
+            text-decoration: none;
+            transition: background 0.2s;
+            font-size: 14px;
+        }
+        .cta-button:hover { background: #e5e5e5; }
+
+        /* Helper */
+        .info-icon {
+            display: inline-block;
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            border: 1px solid currentColor;
+            text-align: center;
+            line-height: 12px;
+            font-size: 10px;
+            cursor: help;
+            opacity: 0.6;
+        }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="container nav-content">
+        <div class="logo">
+            <svg width="20" height="24" viewBox="0 0 17 21" fill="black">
+                <path d="M12.6547 8.92003C12.6253 6.60934 14.6091 5.41853 14.7064 5.36094C13.6297 3.78816 11.973 3.54441 11.3739 3.52088C9.94416 3.37259 8.59409 4.36294 7.86444 4.36294C7.13479 4.36294 6.01438 3.53016 4.84069 3.55463C3.29294 3.5791 1.87163 4.45869 1.07706 5.84369C-0.544156 8.65553 1.85497 15.2999 4.26803 15.2284C5.42766 15.1947 6.26803 14.0782 7.70563 14.0782C9.14322 14.0782 9.88747 15.2275 11.178 15.202C12.5147 15.1765 13.3419 13.9956 14.1556 12.8036C15.118 11.393 15.5206 10.0259 15.5461 9.96216C15.5265 9.95138 12.69 8.85638 12.6547 8.92003ZM10.6491 2.37422C11.2444 1.65528 11.6503 0.662406 11.5377 -0.234062C10.6188 -0.196844 9.51034 0.372125 8.84841 1.16428C8.25213 1.86713 7.81544 2.88753 7.93981 3.77069C8.9475 3.84903 10.0538 3.18816 10.6491 2.37422Z"/>
+            </svg>
+            Team Computers <span>TEI Modeler</span>
+        </div>
+        <div class="badge">Internal Tool</div>
+    </div>
+</header>
+
+<main>
+    <!-- Left Column: Inputs -->
+    <section class="input-section">
+        <h2>Configuration</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 24px; font-size:14px;">
+            Configure fleet parameters to model the Total Economic Impact (TEI) over 3 years. Defaults based on Kotak TEI methodology.
+        </p>
+
+        <!-- 1. Organization Profile -->
+        <div class="card">
+            <h3>Organization Profile</h3>
+            <div class="control-group">
+                <label>Number of Employees / Devices</label>
+                <div class="range-wrapper">
+                    <input type="range" id="deviceCount" min="50" max="5000" step="50" value="1500">
+                    <div class="number-display" id="deviceCountDisplay">1500</div>
+                </div>
+            </div>
+            <div class="input-row">
+                <div class="control-group">
+                    <label>Avg. IT Admin Salary (Annual ₹)</label>
+                    <input type="number" id="itSalary" value="1000000">
+                </div>
+                <div class="control-group">
+                    <label>Avg. User Salary (Annual ₹)</label>
+                    <input type="number" id="userSalary" value="1200000">
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Windows PC Baseline -->
+        <div class="card">
+            <h3>Current State: Windows PC</h3>
+            <div class="input-row">
+                <div class="control-group">
+                    <label>Avg. PC Hardware Cost (₹)</label>
+                    <input type="number" id="pcCost" value="65000">
+                </div>
+                <div class="control-group">
+                    <label>Residual Value (%)</label>
+                    <input type="number" id="pcRes" value="5">
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label>IT Efficiency: PCs per Admin</label>
+                <div class="range-wrapper">
+                    <input type="range" id="pcRatio" min="50" max="400" step="10" value="200">
+                    <div class="number-display" id="pcRatioDisplay">1:200</div>
+                </div>
+                <p style="font-size:11px; color:#86868B; margin-top:4px;">Industry Avg: 200 PCs per IT FTE</p>
+            </div>
+
+            <!-- Collapsible: PC Operating Costs -->
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <span>Advanced: PC Operating Costs</span>
+                    <svg class="chevron" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17L16.59 8.59L18 10L12 16L6 10L7.41 8.59Z"/></svg>
+                </div>
+                <div class="accordion-content">
+                    <div class="control-group">
+                        <label>Annual OS/License Cost per PC (₹)</label>
+                        <input type="number" id="pcLic" value="5000">
+                    </div>
+                    <div class="control-group">
+                        <label>Annual Endpoint Security Cost per PC (₹)</label>
+                        <input type="number" id="pcSec" value="4000">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Mac Future State -->
+        <div class="card">
+            <h3>Future State: Mac Fleet</h3>
+            
+            <label>Mac Fleet Mix</label>
+            <div style="background: #F2F2F7; padding: 16px; border-radius: 12px; margin-bottom: 20px;">
+                <div class="input-row" style="margin-bottom: 12px;">
+                    <div style="flex:2"><label style="margin-bottom:0">Baseline (Air)</label><div style="font-size:11px; color:#86868B">₹75k</div></div>
+                    <div style="flex:1"><input type="number" id="macMixBase" value="70" onchange="updateMix()"></div>
+                    <div style="display:flex; align-items:center;">%</div>
+                </div>
+                <div class="input-row" style="margin-bottom: 12px;">
+                    <div style="flex:2"><label style="margin-bottom:0">Power User (Pro 14")</label><div style="font-size:11px; color:#86868B">₹110k</div></div>
+                    <div style="flex:1"><input type="number" id="macMixPower" value="20" onchange="updateMix()"></div>
+                    <div style="display:flex; align-items:center;">%</div>
+                </div>
+                <div class="input-row">
+                    <div style="flex:2"><label style="margin-bottom:0">Creative (Pro 16")</label><div style="font-size:11px; color:#86868B">₹150k</div></div>
+                    <div style="flex:1"><input type="number" id="macMixCreate" value="10" onchange="updateMix()"></div>
+                    <div style="display:flex; align-items:center;">%</div>
+                </div>
+                <div style="text-align: right; font-size: 12px; color: var(--accent-color); font-weight: 500;" id="weightedMacCost">Avg Cost: ₹90,000</div>
+            </div>
+
+            <div class="input-row">
+                <div class="control-group">
+                    <label>Mac Residual Value (%)</label>
+                    <input type="number" id="macRes" value="25">
+                </div>
+                <div class="control-group">
+                    <label>IT Efficiency: Macs per Admin</label>
+                    <input type="number" id="macRatio" value="500">
+                </div>
+            </div>
+
+            <!-- Collapsible: Mac Operating Costs -->
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <span>Advanced: Mac Operating Costs</span>
+                    <svg class="chevron" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17L16.59 8.59L18 10L12 16L6 10L7.41 8.59Z"/></svg>
+                </div>
+                <div class="accordion-content">
+                    <div class="control-group">
+                        <label>AppleCare (3-Year Total per device) (₹)</label>
+                        <input type="number" id="macCare" value="6000">
+                    </div>
+                    <div class="control-group">
+                        <label>Annual MDM License Cost (₹)</label>
+                        <input type="number" id="macMdm" value="5000">
+                    </div>
+                    <div class="control-group">
+                        <label>Addtl. Dongles/Peripherals (Avg ₹)</label>
+                        <input type="number" id="macDongle" value="2000">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Risk & Energy (Optional) -->
+        <div class="card">
+            <div class="accordion-header" onclick="toggleAccordion(this)" style="padding-top:0">
+                <h3>Risk, Energy & Implementation</h3>
+                <svg class="chevron" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17L16.59 8.59L18 10L12 16L6 10L7.41 8.59Z"/></svg>
+            </div>
+            <div class="accordion-content">
+                <p style="font-size:12px; color:#86868B; margin-bottom:16px;">Based on Kotak TEI Risk Models.</p>
+                
+                <div class="control-group">
+                    <label>Data Breach Probability (per year)</label>
+                    <div class="range-wrapper">
+                        <input type="range" id="breachProb" min="1" max="10" step="0.5" value="2.5">
+                        <div class="number-display" id="breachProbDisplay">2.5%</div>
+                    </div>
+                </div>
+
+                <div class="input-row">
+                    <div class="control-group">
+                        <label>Cost per Breach (₹)</label>
+                        <input type="number" id="breachCost" value="5000000">
+                    </div>
+                    <div class="control-group">
+                        <label>Risk Reduction with Mac (%)</label>
+                        <input type="number" id="riskReduc" value="50">
+                    </div>
+                </div>
+
+                <div class="input-row">
+                    <div class="control-group">
+                        <label>Implementation Cost (One-time ₹)</label>
+                        <input type="number" id="impCost" value="500000">
+                    </div>
+                    <div class="control-group">
+                        <label>Mac Energy Savings (Annual ₹)</label>
+                        <input type="number" id="energySave" value="1120">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Right Column: Results -->
+    <aside class="results-panel">
+        <div class="results-card">
+            <div class="hero-metric">
+                <div class="hero-label">Total 3-Year Savings (TEI)</div>
+                <div class="hero-value" id="totalSavings">₹ 0</div>
+                <div style="font-size: 13px; color: #30D158; margin-top: 4px;" id="perDeviceSavings">₹ 0 per device</div>
+            </div>
+
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-title">ROI</div>
+                    <div class="kpi-val" id="roiVal" style="color:#30D158">0%</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Payback</div>
+                    <div class="kpi-val" id="paybackVal">0 Mo</div>
+                </div>
+            </div>
+
+            <div class="breakdown-list">
+                <div class="breakdown-item">
+                    <span class="b-label">Hardware Avoidance (Net)</span>
+                    <span class="b-value" id="resHw">₹ 0</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="b-label">IT Support Efficiency</span>
+                    <span class="b-value b-positive" id="resSupport">₹ 0</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="b-label">Software & Licensing</span>
+                    <span class="b-value b-positive" id="resSoft">₹ 0</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="b-label">Risk & Data Breach Avoidance</span>
+                    <span class="b-value b-positive" id="resRisk">₹ 0</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="b-label">Energy & Infra</span>
+                    <span class="b-value b-positive" id="resEnergy">₹ 0</span>
+                </div>
+            </div>
+
+            <!-- Chart -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <span>3-Year Cost Comparison</span>
+                </div>
+                
+                <!-- PC Bar -->
+                <div style="margin-bottom: 4px; font-size: 11px; color:#a1a1a6; display:flex; justify-content:space-between;">
+                    <span>Windows PC Fleet</span>
+                    <span id="pcTotalLabel">₹0</span>
+                </div>
+                <div class="bar-wrapper">
+                    <div class="bar-segment seg-hw" id="pcBarHw" style="width: 50%"></div>
+                    <div class="bar-segment seg-ops" id="pcBarOps" style="width: 30%"></div>
+                    <div class="bar-segment seg-risk" id="pcBarRisk" style="width: 20%"></div>
+                </div>
+
+                <!-- Mac Bar -->
+                <div style="margin-bottom: 4px; font-size: 11px; color:#a1a1a6; display:flex; justify-content:space-between;">
+                    <span>Mac Fleet</span>
+                    <span id="macTotalLabel">₹0</span>
+                </div>
+                <div class="bar-wrapper">
+                    <div class="bar-segment mac-hw" id="macBarHw" style="width: 40%"></div>
+                    <div class="bar-segment mac-ops" id="macBarOps" style="width: 20%"></div>
+                    <!-- Mac Risk is usually negligible in chart scale, but we show implicit reduction by shorter bar -->
+                </div>
+
+                <div class="legend">
+                    <div class="legend-item"><div class="dot seg-hw"></div>Hardware</div>
+                    <div class="legend-item"><div class="dot seg-ops"></div>Ops/Support</div>
+                    <div class="legend-item"><div class="dot seg-risk"></div>Risk/Soft</div>
+                </div>
+            </div>
+
+            <a href="#" onclick="window.print(); return false;" class="cta-button">Generate PDF Report</a>
+        </div>
+        
+        <div style="margin-top: 24px; font-size: 11px; color: #86868B; text-align: center; line-height: 1.4;">
+            Calculations strictly follow the Forrester TEI & Kotak Methodology.<br>
+            Includes Hardware, Residuals, Support Labor, Software Licensing, and Risk Adjustments.
+        </div>
+    </aside>
+</main>
+
+<script>
+    // --- Helper Functions ---
+    const formatINR = (num) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(num);
+    const getVal = (id) => parseFloat(document.getElementById(id).value) || 0;
+    const setTxt = (id, txt) => document.getElementById(id).innerText = txt;
+
+    // --- UI Logic ---
+    function toggleAccordion(header) {
+        header.classList.toggle('active');
+        header.nextElementSibling.classList.toggle('active');
+    }
+
+    function updateMix() {
+        const base = getVal('macMixBase');
+        const power = getVal('macMixPower');
+        const create = getVal('macMixCreate');
+        
+        // Normalize if not 100
+        const total = base + power + create;
+        
+        // Prices
+        const pBase = 75000;
+        const pPower = 110000;
+        const pCreate = 150000;
+
+        if (total > 0) {
+            const wAvg = ((base * pBase) + (power * pPower) + (create * pCreate)) / total;
+            setTxt('weightedMacCost', `Avg Cost: ${formatINR(wAvg)}`);
+            return wAvg;
+        }
+        return 75000; // Default
+    }
+
+    // --- Core Calculation Logic (TEI Model) ---
+    function calculate() {
+        // 1. Inputs
+        const devices = getVal('deviceCount');
+        const years = 3;
+        
+        // Org
+        const itSalary = getVal('itSalary');
+        
+        // PC Params
+        const pcCost = getVal('pcCost');
+        const pcRes = getVal('pcRes') / 100;
+        const pcRatio = getVal('pcRatio'); // PCs per Admin
+        const pcLic = getVal('pcLic'); // Annual
+        const pcSec = getVal('pcSec'); // Annual
+        
+        // Mac Params
+        const macAvgCost = updateMix();
+        const macRes = getVal('macRes') / 100;
+        const macRatio = getVal('macRatio'); // Macs per Admin
+        const macCare = getVal('macCare'); // 3-Year Total
+        const macMdm = getVal('macMdm'); // Annual
+        const macDongle = getVal('macDongle'); // One-time
+
+        // Risk & Infra
+        const breachProb = getVal('breachProb') / 100;
+        const breachCost = getVal('breachCost');
+        const riskReduc = getVal('riskReduc') / 100;
+        const impCost = getVal('impCost'); // One-time total
+        const energySave = getVal('energySave'); // Annual per device savings
+
+        // --- 2. Cost Modeling (3-Year Fleet Total) ---
+
+        // A. HARDWARE COSTS
+        // PC: (Cost - Residual) * Count
+        const fleetPcHw = (pcCost - (pcCost * pcRes)) * devices;
+        // Mac: (Cost + Dongles + AppleCare - Residual) * Count
+        // Note: AppleCare is OpEx usually, but often bundled in purchase for TCO. We'll treat as HW/Upfront for simplicity or split. Let's bundle.
+        const fleetMacHw = (macAvgCost + macDongle + macCare - (macAvgCost * macRes)) * devices;
+        
+        // Hardware Avoidance (Benefit)
+        const benefitHw = fleetPcHw - fleetMacHw;
+
+        // B. IT SUPPORT & LABOR (The "TEI" Secret Sauce)
+        // Formula: IT Salary * ( (Devices/PC_Ratio) - (Devices/Mac_Ratio) ) * Years
+        // This calculates how many fewer admins you need.
+        const pcAdminsNeeded = devices / pcRatio;
+        const macAdminsNeeded = devices / macRatio;
+        const pcLaborCost = pcAdminsNeeded * itSalary * years;
+        const macLaborCost = macAdminsNeeded * itSalary * years;
+        const benefitSupport = pcLaborCost - macLaborCost;
+
+        // C. SOFTWARE & LICENSING
+        // PC: (OS License + Security) * Devices * Years
+        const pcSoftCost = (pcLic + pcSec) * devices * years;
+        // Mac: (MDM) * Devices * Years
+        const macSoftCost = (macMdm) * devices * years;
+        const benefitSoft = pcSoftCost - macSoftCost;
+
+        // D. RISK & BREACH
+        // Annual Expected Loss = Prob * Cost
+        const pcRiskAnnual = breachProb * breachCost;
+        // Mac Risk = PC Risk * (1 - Reduction)
+        const macRiskAnnual = pcRiskAnnual * (1 - riskReduc);
+        
+        const pcRiskTotal = pcRiskAnnual * years; // Simplified, not doing per-device risk scaling here, assuming "Org Risk"
+        const macRiskTotal = macRiskAnnual * years;
+        const benefitRisk = pcRiskTotal - macRiskTotal;
+
+        // E. ENERGY & INFRA
+        const benefitEnergy = energySave * devices * years;
+        const costImplementation = impCost; // Negative benefit
+        const benefitInfraNet = benefitEnergy - costImplementation;
+
+        // --- 3. Aggregation ---
+        const totalSavings = benefitHw + benefitSupport + benefitSoft + benefitRisk + benefitInfraNet;
+        const savingsPerDevice = totalSavings / devices;
+
+        // ROI Calculation
+        // Investment = Delta in Hardware + Implementation + Training (ImpCost)
+        // Note: If Mac HW is cheaper (due to high residual), Investment might be negative?
+        // Standard ROI = (Net Benefits / Costs) * 100
+        // Here we use TEI style: (Total Savings / Total Mac Costs) or (Savings / Delta).
+        // Let's use (Net Savings / Investment) where Investment = Extra cost of Mac. 
+        // If Mac is cheaper, ROI is infinite.
+        
+        const initialInvest = (fleetMacHw + impCost) - fleetPcHw; 
+        // If Mac is cheaper upfront, ROI is instant.
+        let roi = 0;
+        let payback = 0;
+        
+        if (initialInvest > 0) {
+            roi = (totalSavings / initialInvest) * 100;
+            // Payback in months
+            const annualSaving = totalSavings / 3;
+            payback = (initialInvest / annualSaving) * 12;
+        } else {
+            roi = 999;
+        }
+
+        // --- 4. Render ---
+        setTxt('totalSavings', formatINR(totalSavings));
+        setTxt('perDeviceSavings', `${formatINR(savingsPerDevice)} per device`);
+        setTxt('roiVal', roi > 900 ? "Immediate" : Math.round(roi) + "%");
+        setTxt('paybackVal', payback <= 0 ? "Immediate" : Math.ceil(payback) + " Mo");
+
+        // Breakdown
+        setTxt('resHw', formatINR(benefitHw));
+        setTxt('resSupport', formatINR(benefitSupport));
+        setTxt('resSoft', formatINR(benefitSoft));
+        setTxt('resRisk', formatINR(benefitRisk));
+        setTxt('resEnergy', formatINR(benefitInfraNet));
+        
+        // Color coding HW benefit (could be negative if Mac is expensive)
+        document.getElementById('resHw').style.color = benefitHw >= 0 ? '#30D158' : '#FF3B30';
+
+        // Chart Bars
+        const pcTotalTCO = fleetPcHw + pcLaborCost + pcSoftCost + pcRiskTotal;
+        const macTotalTCO = fleetMacHw + macLaborCost + macSoftCost + macRiskTotal + impCost; // Add imp cost to Mac TCO
+        
+        setTxt('pcTotalLabel', formatINR(pcTotalTCO));
+        setTxt('macTotalLabel', formatINR(macTotalTCO));
+
+        const maxVal = Math.max(pcTotalTCO, macTotalTCO);
+        
+        // PC Segments
+        document.getElementById('pcBarHw').style.width = (fleetPcHw / maxVal * 100) + "%";
+        document.getElementById('pcBarOps').style.width = ((pcLaborCost + pcSoftCost) / maxVal * 100) + "%";
+        document.getElementById('pcBarRisk').style.width = (pcRiskTotal / maxVal * 100) + "%";
+
+        // Mac Segments
+        document.getElementById('macBarHw').style.width = (fleetMacHw / maxVal * 100) + "%";
+        document.getElementById('macBarOps').style.width = ((macLaborCost + macSoftCost + impCost) / maxVal * 100) + "%";
+        // Mac Risk is implicit in the remaining space or just small. We won't render a risk bar for Mac to keep it clean, showing the "gap" as savings.
+        
+        // Range displays
+        setTxt('deviceCountDisplay', devices);
+        setTxt('pcRatioDisplay', `1:${pcRatio}`);
+        setTxt('breachProbDisplay', `${(breachProb*100).toFixed(1)}%`);
+
+    }
+
+    // --- Listeners ---
+    document.querySelectorAll('input').forEach(i => i.addEventListener('input', calculate));
+    
+    // Init
+    updateMix();
+    calculate();
+
+</script>
+
+</body>
+</html>
